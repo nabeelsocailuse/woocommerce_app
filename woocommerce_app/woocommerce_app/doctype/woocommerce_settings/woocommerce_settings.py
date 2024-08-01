@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 import requests
 import frappe
+from frappe import _
 from frappe.utils import flt, nowdate, add_days
 from frappe.model.document import Document
 
