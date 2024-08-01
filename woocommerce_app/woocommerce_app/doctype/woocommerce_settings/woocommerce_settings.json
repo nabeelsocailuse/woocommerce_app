@@ -1,0 +1,124 @@
+{
+ "actions": [],
+ "allow_copy": 1,
+ "allow_rename": 1,
+ "autoname": "field:woo_site_name",
+ "creation": "2024-07-31 23:41:53.419657",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "woo_site_name",
+  "woo_site_url",
+  "column_break_xuzr",
+  "enabled",
+  "company",
+  "section_break_lpun",
+  "consumer_key",
+  "column_break_ogzt",
+  "consumer_secret",
+  "section_break_quow",
+  "order_id",
+  "column_break_rhpx",
+  "sync_orders"
+ ],
+ "fields": [
+  {
+   "fieldname": "woo_site_url",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Woo Site URL"
+  },
+  {
+   "fieldname": "column_break_xuzr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "section_break_lpun",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "consumer_key",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Consumer Key"
+  },
+  {
+   "fieldname": "column_break_ogzt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "consumer_secret",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Consumer Secret"
+  },
+  {
+   "fieldname": "woo_site_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Woo Site Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "section_break_quow",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "order_id",
+   "fieldtype": "Data",
+   "label": "Order ID"
+  },
+  {
+   "fieldname": "column_break_rhpx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sync_orders",
+   "fieldtype": "Button",
+   "label": "Sync Order(s)"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  }
+ ],
+ "hide_toolbar": 1,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "make_attachments_public": 1,
+ "modified": "2024-08-01 17:43:39.473226",
+ "modified_by": "Administrator",
+ "module": "Woocommerce App",
+ "name": "WooCommerce Settings",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "woo_site_name"
+}
