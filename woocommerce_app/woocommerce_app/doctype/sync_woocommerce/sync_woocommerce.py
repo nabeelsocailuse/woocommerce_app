@@ -35,7 +35,7 @@ def create_order(order: dict):
 	# woocommerce order details
 	order_id = order["id"]
 	date_created = order['date_created']
-
+	
 	"""Create a sales order based on the order data."""
 	sales_order = frappe.new_doc("Sales Order")
 	sales_order.customer = customer.name
