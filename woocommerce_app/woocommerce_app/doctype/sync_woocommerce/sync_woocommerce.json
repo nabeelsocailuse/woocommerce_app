@@ -22,6 +22,7 @@
  ],
  "fields": [
   {
+   "description": "It's orders api url from WooCommerce.",
    "fieldname": "woo_site_url",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -34,6 +35,7 @@
   },
   {
    "default": "0",
+   "description": "If checked, WooCommerce orders will be automatically synced with ERPNext \"Sales Order\".",
    "fieldname": "enabled",
    "fieldtype": "Check",
    "in_list_view": 1,
@@ -62,6 +64,7 @@
    "reqd": 1
   },
   {
+   "description": "It's just a name of website of wordpress your syncing with. e.g; abc.com, erpnext.com ",
    "fieldname": "woo_site_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -83,6 +86,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "It's used to sync orders manually from woocommerce website to erpnext \"Sales Order\".",
    "fieldname": "sync_orders",
    "fieldtype": "Button",
    "label": "Sync Order(s)"
@@ -92,7 +96,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2024-08-02 16:43:25.759254",
+ "modified": "2024-08-02 18:43:39.686104",
  "modified_by": "Administrator",
  "module": "Woocommerce App",
  "name": "Sync WooCommerce",
