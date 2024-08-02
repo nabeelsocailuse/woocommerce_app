@@ -11,7 +11,6 @@
   "woo_site_url",
   "column_break_xuzr",
   "enabled",
-  "company",
   "section_break_lpun",
   "consumer_key",
   "column_break_ogzt",
@@ -26,7 +25,8 @@
    "fieldname": "woo_site_url",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Woo Site URL"
+   "label": "Woo Site URL",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_xuzr",
@@ -47,7 +47,8 @@
    "fieldname": "consumer_key",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Consumer Key"
+   "label": "Consumer Key",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_ogzt",
@@ -57,7 +58,8 @@
    "fieldname": "consumer_secret",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Consumer Secret"
+   "label": "Consumer Secret",
+   "reqd": 1
   },
   {
    "fieldname": "woo_site_name",
@@ -84,23 +86,16 @@
    "fieldname": "sync_orders",
    "fieldtype": "Button",
    "label": "Sync Order(s)"
-  },
-  {
-   "fieldname": "company",
-   "fieldtype": "Link",
-   "label": "Company",
-   "options": "Company",
-   "reqd": 1
   }
  ],
  "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2024-08-01 17:43:39.473226",
+ "modified": "2024-08-02 16:43:25.759254",
  "modified_by": "Administrator",
  "module": "Woocommerce App",
- "name": "WooCommerce Settings",
+ "name": "Sync WooCommerce",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestWooCommerceSettings(FrappeTestCase):
+class TestSyncWooCommerce(FrappeTestCase):
 	pass

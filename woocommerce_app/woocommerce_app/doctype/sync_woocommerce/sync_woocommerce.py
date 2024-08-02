@@ -3,10 +3,10 @@
 import requests
 import frappe
 from frappe import _
-from frappe.utils import flt, nowdate, add_days
+from frappe.utils import flt, nowdate, add_days, getdate
 from frappe.model.document import Document
 
-class WooCommerceSettings(Document):
+class SyncWooCommerce(Document):
 	
 	@frappe.whitelist()
 	def fetch_woocommerce_orders(self):
@@ -16,43 +16,72 @@ class WooCommerceSettings(Document):
 			orders = response.json()
 			if(self.order_id):
 				for order in [orders]:
-					self.create_order(order)
+					if(frappe.db.exists("Sales Order", {"po_no": order["id"]})):
+						update_order(order)
+					else:
+						create_order(order)
 			else:
 				for order in orders:
-					self.create_order(order)
+					if(frappe.db.exists("Sales Order", {"po_no": order["id"]})):
+						update_order(order)
+					else:
+						create_order(order)
 		else:
 			frappe.throw(_("Failed to fetch WooCommerce orders. Please check your API credentials and URL."))
 
 
-	def create_order(self, order: dict):
-		customer = create_update_customer(order)
-		# woocommerce order details
-		order_id = order["id"]
-		order_date = order.get('date_created')
+def create_order(order: dict):
+	customer = create_update_customer(order)
+	# woocommerce order details
+	order_id = order["id"]
+	date_created = order['date_created']
 
-		"""Create a sales order based on the order data."""
-		sales_order = frappe.new_doc("Sales Order")
-		sales_order.customer = customer.name
-		sales_order.company = self.company
-		sales_order.po_no = order_id
+	"""Create a sales order based on the order data."""
+	sales_order = frappe.new_doc("Sales Order")
+	sales_order.customer = customer.name
+	sales_order.company = frappe.db.get_single_value('Global Defaults', 'default_company')
+	sales_order.po_no = order_id
+	sales_order.transaction_date = getdate(date_created)
+	sales_order.delivery_date = getdate(frappe.utils.add_days(
+		date_created, 7
+	))
+	add_items_to_sales_order(order, sales_order)
+	sales_order.flags.ignore_mandatory = True
+	try:
+		sales_order.insert(ignore_permissions=True)
+	except Exception as e:
+		frappe.log_error(message=str(e), title="Error in creating Sales Order from WooCommerce")
 
-		created_date = order.get("date_created")
-		sales_order.transaction_date = created_date
-		sales_order.delivery_date = frappe.utils.add_days(
-			created_date, 7
-		)
-
+def update_order(order: dict):
+	order_id = order["id"]
+	date_created = order['date_created']
+	delivery_date = frappe.utils.add_days(
+		date_created, 8
+	)
+	so_no = frappe.db.get_value("Sales Order", {"docstatus": 0, "po_no": order_id}, "name")
+	if(so_no):
+		sales_order = frappe.get_doc("Sales Order", so_no)
+		sales_order.transaction_date = getdate(date_created)
+		sales_order.delivery_date = getdate(delivery_date)
+		sales_order.set("items",[])
 		add_items_to_sales_order(order, sales_order)
-
 		sales_order.flags.ignore_mandatory = True
-		sales_order.insert()
-		# sales_order.submit()
+		try:
+			sales_order.save()
+		except Exception as e:
+			frappe.log_error(message=str(e), title="Error in creating Sales Order from WooCommerce")
 
 def add_items_to_sales_order(order: dict, sales_order: dict):
 	"""Set the items in the sales order with taxes based on the order data."""
 	line_items = order.get('line_items', [])
 	for line_item in line_items:
 		item = get_item(line_item)
+		qty = line_item.get("quantity")
+		price = line_item.get("price")
+		# filters = {"parent": sales_order.name, "item_code": item.name, "qty": qty} # "rate": price
+		# child_name = frappe.db.get_value("Sales Order Item", filters, "name")
+		# if(child_name):
+		# 	frappe.db
 		sales_order.append(
 			"items",
 			{
@@ -61,8 +90,8 @@ def add_items_to_sales_order(order: dict, sales_order: dict):
 				"description": item.description,
 				"delivery_date": sales_order.delivery_date,
 				"uom": get_uom(line_item.get("sku"), None),
-				"qty": line_item.get("quantity"),
-				"rate": line_item.get("price"),
+				"qty": qty,
+				"rate": price,
 			},
 		)
 
@@ -237,8 +266,20 @@ def create_contact(data: dict, customer: str):
 	contact.save()
 
 
-
-
+@frappe.whitelist()
+def sync_woocommerce_orders():
+	for sw in frappe.get_list("Sync WooCommerce", filters={"enabled": 1, }, fields=["*"]):
+		
+		url = f"{sw.woo_site_url}/{sw.order_id}" if(sw.order_id) else sw.woo_site_url
+		response = requests.get(url, auth=(sw.consumer_key, sw.consumer_secret))
+		
+		if response.status_code == 200:
+			orders = response.json()
+			for order in orders:
+				if(frappe.db.exists("Sales Order", {"po_no": order["id"]})):
+					update_order(order)
+				else:
+					create_order(order)
 """ 
 def create_sales_order(order):
 	# customer_name = order.get('billing', {}).get('first_name') + " " + order.get('billing', {}).get('last_name')

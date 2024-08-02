@@ -133,7 +133,13 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
+    "cron": {
+        "*/45 * * * *": [
+            "woocommerce_app.woocommerce_app.doctype.sync_woocommerce.sync_woocommerce.sync_woocommerce_orders",
+        ],
+    },
+    
 # 	"all": [
 # 		"woocommerce_app.tasks.all"
 # 	],
@@ -149,7 +155,7 @@ app_license = "mit"
 # 	"monthly": [
 # 		"woocommerce_app.tasks.monthly"
 # 	],
-# }
+}
 
 # Testing
 # -------
