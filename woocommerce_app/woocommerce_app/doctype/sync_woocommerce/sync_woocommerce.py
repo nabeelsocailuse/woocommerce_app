@@ -5,13 +5,15 @@ import frappe
 from frappe import _
 from frappe.utils import flt, nowdate, add_days, getdate
 from frappe.model.document import Document
+from erpnext.controllers.accounts_controller import get_taxes_and_charges # params(master_doctype, master_name)
 
 class SyncWooCommerce(Document):
 	
 	@frappe.whitelist()
 	def fetch_woocommerce_orders(self):
 		url = f"{self.woo_site_url}/{self.order_id}" if(self.order_id) else self.woo_site_url
-		response = requests.get(url, auth=(self.consumer_key, self.consumer_secret))
+		response = requests.get(url, {"status": self.status}, auth=(self.consumer_key, self.consumer_secret))
+		
 		if response.status_code == 200:
 			orders = response.json()
 			if(self.order_id):
@@ -26,8 +28,12 @@ class SyncWooCommerce(Document):
 						update_order(order)
 					else:
 						create_order(order)
+			if(orders):
+				return {"msg": f'Orders have been synced successfully.', "color": "green"}
+			else:
+				return {"msg": f'No order found against status=<b>{self.status}</b>', "color": "gray"}
 		else:
-			frappe.throw(_("Failed to fetch WooCommerce orders. Please check your API credentials and URL."))
+			return {"msg": "Failed to fetch WooCommerce orders. Please check your API credentials and URL.", "color": "red"}
 
 
 def create_order(order: dict):
@@ -39,16 +45,23 @@ def create_order(order: dict):
 	"""Create a sales order based on the order data."""
 	sales_order = frappe.new_doc("Sales Order")
 	sales_order.customer = customer.name
-	sales_order.company = frappe.db.get_single_value('Global Defaults', 'default_company')
+	# sales_order.company = frappe.db.get_single_value('Global Defaults', 'default_company')
 	sales_order.po_no = order_id
 	sales_order.transaction_date = getdate(date_created)
 	sales_order.delivery_date = getdate(frappe.utils.add_days(
 		date_created, 7
 	))
+	# sales_order.taxes_and_charges = "Pakistan Tax"
 	add_items_to_sales_order(order, sales_order)
 	sales_order.flags.ignore_mandatory = True
 	try:
 		sales_order.insert(ignore_permissions=True)
+		if(sales_order.taxes_and_charges):
+			taxes = get_taxes_and_charges("Sales Taxes and Charges Template", sales_order.taxes_and_charges)
+			if(taxes):
+				sales_order.set("taxes", taxes)
+				sales_order.save(ignore_permissions=True)
+			
 	except Exception as e:
 		frappe.log_error(message=str(e), title="Error in creating Sales Order from WooCommerce")
 
@@ -142,7 +155,7 @@ def get_uom(sku: str | None, default_uom: str):
     if sku and not frappe.db.exists("UOM", sku):
         frappe.get_doc({"doctype": "UOM", "uom_name": sku}).save()
 
-    return sku or (default_uom or "Nos")
+    return sku or (default_uom or "Box")
 
 
 def add_tax_details(sales_order, price, desc, tax_account_head):
@@ -164,24 +177,26 @@ def create_update_customer(order_data: dict):
 	billing_data = order_data.get("billing")
 	customer_id = order_data.get("customer_id")
 	customer_name = billing_data.get("first_name") + " " + billing_data.get("last_name")
+	email = order_data.get('billing', {}).get('email')
 
 	# Customer could have been created manually which may differ in naming
 	# always check woocomm_customer_id
-	customer = frappe.db.get_value("Customer", {"custom_woocommerce_customer_id": customer_id}, "name")
-	if(customer): 
-		customer = frappe.get_doc("Customer", customer)
+	# customer = frappe.db.get_value("Customer", {"custom_woocommerce_customer_id": customer_id}, "name")
+	# if(customer): 
+	# 	customer = frappe.get_doc("Customer", customer)
+	# else:
+		
+	if(frappe.db.exists("Customer", email)):
+		customer = frappe.get_doc("Customer", email)
 	else:
-		email = order_data.get('billing', {}).get('email')
-		if(frappe.db.exists("Customer", email)):
-			customer = frappe.get_doc("Customer", email)
-		else:
-			customer = frappe.new_doc("Customer")
-			customer.name = customer_id
-			customer.customer_name = customer_name
-			customer.custom_woocommerce_customer_id = customer_id
-			customer.flags.ignore_mandatory = True
-			customer.save()
-
+		customer = frappe.new_doc("Customer")
+		customer.name = customer_id
+		customer.customer_name = customer_name
+		customer.custom_woocommerce_customer_id = customer_id
+		customer.flags.ignore_mandatory = True
+		customer.save()
+		frappe.db.set_value('Customer', customer.name, "name", email)
+		customer.update({"name": email})
 	# Create address/contact if does not exist
 	create_address(billing_data, customer, "Billing")
 	create_address(order_data.get("shipping"), customer, "Shipping")
@@ -190,38 +205,39 @@ def create_update_customer(order_data: dict):
 	return customer
 
 def create_address(raw_data: dict, customer: dict, address_type: str):
-    """Create an address for the customer if it does not exist."""
-    if frappe.db.exists(
-        "Address",
-        {
-            "pincode": raw_data.get("postcode"),
-            "address_line1": raw_data.get("address_1", "Not Provided"),
-            "custom_woocommerce_customer_id": customer.custom_woocommerce_customer_id,
-            "address_type": address_type,
-        },
-    ):
-        return
+	# frappe.throw(f"{customer}")
+	"""Create an address for the customer if it does not exist."""
+	if frappe.db.exists(
+		"Address",
+		{
+			"pincode": raw_data.get("postcode"),
+			"address_line1": raw_data.get("address_1", "Not Provided"),
+			"custom_woocommerce_customer_id": customer.custom_woocommerce_customer_id,
+			"address_type": address_type,
+		},
+	):
+		return
 
-    address = frappe.new_doc("Address")
-    address.address_title = customer.get("customer_name")
-    address.address_line1 = raw_data.get("address_1", "Not Provided")
-    address.address_line2 = raw_data.get("address_2")
-    address.city = raw_data.get("city", "Not Provided")
-    address.custom_woocommerce_customer_id = customer.custom_woocommerce_customer_id
-    address.address_type = address_type
-    address.state = raw_data.get("state")
-    address.pincode = raw_data.get("postcode")
-    address.phone = raw_data.get("phone")
-    address.email_id = raw_data.get("email")
+	address = frappe.new_doc("Address")
+	address.address_title = customer.get("customer_name")
+	address.address_line1 = raw_data.get("address_1", "Not Provided")
+	address.address_line2 = raw_data.get("address_2")
+	address.city = raw_data.get("city", "Not Provided")
+	address.custom_woocommerce_customer_id = customer.custom_woocommerce_customer_id
+	address.address_type = address_type
+	address.state = raw_data.get("state")
+	address.pincode = raw_data.get("postcode")
+	address.phone = raw_data.get("phone")
+	address.email_id = raw_data.get("email")
 
-    if country := raw_data.get("country"):
-        address.country = frappe.db.get_value("Country", {"code": country.lower()})
-    else:
-        address.country = frappe.get_system_settings("country")
+	if country := raw_data.get("country"):
+		address.country = frappe.db.get_value("Country", {"code": country.lower()})
+	else:
+		address.country = frappe.get_system_settings("country")
 
-    address.append("links", {"link_doctype": "Customer", "link_name": customer.name})
-    address.flags.ignore_mandatory = True
-    address.save()
+	address.append("links", {"link_doctype": "Customer", "link_name": customer.name})
+	address.flags.ignore_mandatory = True
+	address.save()
 
 def create_contact(data: dict, customer: str):
 	email = data.get("email")
@@ -268,10 +284,11 @@ def create_contact(data: dict, customer: str):
 
 @frappe.whitelist()
 def sync_woocommerce_orders():
-	for sw in frappe.get_list("Sync WooCommerce", filters={"enabled": 1, }, fields=["*"]):
+	for sw in frappe.get_list("Sync WooCommerce", filters={"enabled": 1}, fields=["*"]):
 		
 		url = f"{sw.woo_site_url}/{sw.order_id}" if(sw.order_id) else sw.woo_site_url
-		response = requests.get(url, auth=(sw.consumer_key, sw.consumer_secret))
+		params = {"status": sw.status} if (sw.status) else {}
+		response = requests.get(url, params,auth=(sw.consumer_key, sw.consumer_secret))
 		
 		if response.status_code == 200:
 			orders = response.json()

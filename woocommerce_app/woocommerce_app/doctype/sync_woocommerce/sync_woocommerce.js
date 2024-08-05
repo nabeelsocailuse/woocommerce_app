@@ -11,8 +11,9 @@ frappe.ui.form.on("Sync WooCommerce", {
             doc: frm.doc,
             method: "fetch_woocommerce_orders",
             callback: function(r){
+                let data = r.message;
                 frm.set_intro('');
-                frm.set_intro('Orders have been synced successfully.', 'green');
+                frm.set_intro(data.msg, data.color);
                 setTimeout(() => {
                     frm.set_intro('');
                 }, 4000);

@@ -11,6 +11,7 @@
   "woo_site_url",
   "column_break_xuzr",
   "enabled",
+  "status",
   "section_break_lpun",
   "consumer_key",
   "column_break_ogzt",
@@ -90,13 +91,22 @@
    "fieldname": "sync_orders",
    "fieldtype": "Button",
    "label": "Sync Order(s)"
+  },
+  {
+   "default": "pending",
+   "description": "You can fetch specific status order from WooCommerce using this filter.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nany\ntrash\nauto-draft\non-quote\ninvoice-payment\nkeeping-stock\ncompleted\nrefunded\nquoted\npartially-paid\ncancelled\nprocessing\npending\nfailed\nwaiting\non-hold\ncheckout-draft",
+   "read_only": 1
   }
  ],
  "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2024-08-02 18:43:39.686104",
+ "modified": "2024-08-05 15:04:31.837527",
  "modified_by": "Administrator",
  "module": "Woocommerce App",
  "name": "Sync WooCommerce",
