@@ -188,6 +188,8 @@ def create_update_customer(order_data: dict):
 		
 	if(frappe.db.exists("Customer", email)):
 		customer = frappe.get_doc("Customer", email)
+		if(not customer.custom_woocommerce_customer_id):
+			frappe.db.set_value('Customer', customer.name, "custom_woocommerce_customer_id", customer_id)
 	else:
 		customer = frappe.new_doc("Customer")
 		customer.name = customer_id
