@@ -91,10 +91,7 @@ def add_items_to_sales_order(order: dict, sales_order: dict):
 		item = get_item(line_item)
 		qty = line_item.get("quantity")
 		price = line_item.get("price")
-		# filters = {"parent": sales_order.name, "item_code": item.name, "qty": qty} # "rate": price
-		# child_name = frappe.db.get_value("Sales Order Item", filters, "name")
-		# if(child_name):
-		# 	frappe.db
+		frappe.db.set_value("Item Price", {"item_code": item.name}, 'price_list_rate', price)
 		sales_order.append(
 			"items",
 			{
