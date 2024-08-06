@@ -135,7 +135,7 @@ app_license = "mit"
 
 scheduler_events = {
     "cron": {
-        "*/45 * * * *": [
+        "*/15 * * * *": [
             "woocommerce_app.woocommerce_app.doctype.sync_woocommerce.sync_woocommerce.sync_woocommerce_orders",
         ],
     },
